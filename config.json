@@ -1,0 +1,127 @@
+{
+  "Resistors": [
+    {
+      "Value": 10,
+      "Tolerance": 10
+    },
+    {
+      "Value": 22,
+      "Tolerance": 10
+    },
+    {
+      "Value": 47,
+      "Tolerance": 10
+    },
+    {
+      "Value": 100,
+      "Tolerance": 10
+    },
+    {
+      "Value": 150,
+      "Tolerance": 10
+    },
+    {
+      "Value": 220,
+      "Tolerance": 10
+    },
+    {
+      "Value": 270,
+      "Tolerance": 10
+    },
+    {
+      "Value": 300,
+      "Tolerance": 10
+    },
+    {
+      "Value": 330,
+      "Tolerance": 10
+    },
+    {
+      "Value": 470,
+      "Tolerance": 10
+    },
+    {
+      "Value": 510,
+      "Tolerance": 10
+    },
+    {
+      "Value": 680,
+      "Tolerance": 10
+    },
+    {
+      "Value": 1000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 2000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 2200,
+      "Tolerance": 10
+    },
+    {
+      "Value": 3300,
+      "Tolerance": 10
+    },
+    {
+      "Value": 4700,
+      "Tolerance": 10
+    },
+    {
+      "Value": 5100,
+      "Tolerance": 10
+    },
+    {
+      "Value": 6800,
+      "Tolerance": 10
+    },
+    {
+      "Value": 10000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 20000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 47000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 51000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 68000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 100000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 220000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 330000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 470000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 680000,
+      "Tolerance": 10
+    },
+    {
+      "Value": 1000000,
+      "Tolerance": 10
+    }
+
+  ],
+  "PopulationSize": 10000,
+  "MutationRate": 14
+}
