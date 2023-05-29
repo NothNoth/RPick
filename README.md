@@ -6,6 +6,9 @@ RPick uses a genetic algorithm to help you choose two resistors in your collecti
 
 The algorithm will test combinations among you collection but putting two values in series or parallel and try to match your target.
 
+The tolerance of the combined resistors is computed and integrated into the global score in order to statistically have the best chance to obtain the target value in practice.
+
+
 ## Usage
 
 Edit "config.json" and set your resistors collection (what do you have in stock).
@@ -24,7 +27,12 @@ Example:
     [...]
     Generation 100  |  51000Ohm -- 3300Ohm => 54300 Ohm [21.000000]
 
+
+The best current result is displayed (interrupt with CTRL+C).
+
+  '--' means: resistors in series
+  '//' means: resistors in parallel
+
 ## Upcoming work
 
-  - Use tolerance values to try to reduce the obtained tolerance
   - Combine 3 resistors
