@@ -63,6 +63,10 @@ func (a ByNote) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByNote) Less(i, j int) bool { return a[i].note < a[j].note }
 
 func main() {
+	var duplicates uint32
+	var config Config
+	var population []Individual
+
 	if len(os.Args) != 3 {
 		fmt.Println("Usage:", os.Args[0], " <config file> <target value>")
 		return
@@ -82,7 +86,6 @@ func main() {
 		return
 	}
 
-	var config Config
 	err = json.Unmarshal(configData, &config)
 	if err != nil {
 		fmt.Println(err)
@@ -102,12 +105,12 @@ func main() {
 		}
 	}()
 
-	var population []Individual
 	for i := 0; i < int(config.PopulationSize); i++ {
 		population = append(population, generateIndividual(config.Resistors))
 	}
 
 	generation := 1
+	mutationRate := config.MutationRate
 	for {
 		//Evaluate
 		for i := 0; i < int(config.PopulationSize); i++ {
@@ -116,34 +119,50 @@ func main() {
 
 		//Sort
 		sort.Sort(ByNote(population))
-
+		/*
+			//Debug
+			fmt.Printf("Currently at generation %d [Mrate: %d]\n", generation, mutationRate)
+			for idx, ind := range population {
+				fmt.Println(idx, "", ind)
+			}
+			// /Debug
+		*/
 		if kill {
 			break
 		}
 
-		//Select
+		//Select first half
 		newPopulation := population[:config.PopulationSize/2.0]
 
-		//Mix
+		//Mix consecutives from first half to generate second half
 		for i := 0; i < (int)(config.PopulationSize/2.0); i += 2 {
 			newInd := mix(newPopulation[i], newPopulation[i+1], config.Resistors)
 
 			//Mutate?
-			if rand.Intn(100) < int(config.MutationRate) {
+			if rand.Intn(100) < int(mutationRate) {
 				newInd = mutate(newInd, config.Resistors)
 			}
 			newPopulation = append(newPopulation, newInd)
 		}
 
 		population = newPopulation[:config.PopulationSize]
+
 		if generation%100 == 0 {
-			fmt.Println("Generation", generation, " | ", population[0])
+			duplicates, population = cleanup(population)
+			duplicatesRatio := float64(duplicates) * 100.0 / float64(config.PopulationSize)
+			fmt.Println("Generation", generation, "(duplicates", duplicatesRatio, "%) | ", population[0])
+			if duplicatesRatio > 30 {
+				mutationRate = config.MutationRate * 2.0
+			} else {
+				mutationRate = config.MutationRate
+			}
 		}
 		generation++
+		//time.Sleep(1 * time.Millisecond)
 	}
 
-	fmt.Println("Stopped at generation", generation)
-
+	duplicates, population = cleanup(population)
+	fmt.Printf("Stopped at generation %d [%.0f %% duplicates]", generation, float64(duplicates)*100.0/float64(config.PopulationSize))
 	for idx, ind := range population {
 		fmt.Println(idx, "", ind)
 	}
@@ -152,23 +171,23 @@ func main() {
 }
 
 func (r Resistor) String() string {
-	return fmt.Sprintf("%dOhm (%d%%)", r.Value, r.Tolerance)
+	return fmt.Sprintf("%d Ohm (%d%%)", r.Value, r.Tolerance)
 }
 
 func (ind Individual) String() string {
 	switch ind.mode {
 	case eModeSerial:
-		return fmt.Sprintf("%dOhm -- %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.value, ind.tolerance, ind.note)
+		return fmt.Sprintf("%d Ohm -- %d Ohm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.value, ind.tolerance, ind.note)
 	case eModeSerial3:
-		return fmt.Sprintf("%dOhm -- %dOhm -- %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
+		return fmt.Sprintf("%d Ohm -- %d Ohm -- %d Ohm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
 	case eModeParallel:
-		return fmt.Sprintf("%dOhm // %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.value, ind.tolerance, ind.note)
+		return fmt.Sprintf("%d Ohm // %d Ohm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.value, ind.tolerance, ind.note)
 	case eModeParallel3:
-		return fmt.Sprintf("%dOhm // %dOhm // %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
+		return fmt.Sprintf("%d Ohm // %d Ohm // %d Ohm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
 	case eModeParallelAndSerie:
-		return fmt.Sprintf("%dOhm // %dOhm -- %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
+		return fmt.Sprintf("%d Ohm // %d Ohm -- %d Ohm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
 	case eModeSeriesOnParallel:
-		return fmt.Sprintf("(%dOhm -- %dOhm) // %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
+		return fmt.Sprintf("(%d Ohm -- %d Ohm) // %d Ohm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
 
 	}
 	return ""
@@ -201,10 +220,13 @@ func evaluate(ind *Individual, target uint32) (uint32, uint32, float64) {
 		tolerance = math.Sqrt(float64(ind.r1.Tolerance)*float64(ind.r1.Tolerance) + float64(ind.r2.Tolerance)*float64(ind.r2.Tolerance))
 	case eModeParallel3:
 		value = (1.0 / ((1.0 / (float64)(ind.r1.Value)) + (1.0 / (float64)(ind.r2.Value)) + (1.0 / (float64)(ind.r3.Value))))
+		tolerance = math.Sqrt(float64(ind.r1.Tolerance)*float64(ind.r1.Tolerance) + float64(ind.r2.Tolerance)*float64(ind.r2.Tolerance) + float64(ind.r3.Tolerance)*float64(ind.r3.Tolerance))
 	case eModeParallelAndSerie:
 		value = (1.0/((1.0/(float64)(ind.r1.Value))+(1.0/(float64)(ind.r2.Value))) + float64(ind.r3.Value))
+		tolerance = math.Sqrt(float64(ind.r1.Tolerance)*float64(ind.r1.Tolerance) + float64(ind.r2.Tolerance)*float64(ind.r2.Tolerance) + float64(ind.r3.Tolerance)*float64(ind.r3.Tolerance))
 	case eModeSeriesOnParallel:
 		value = (1.0 / ((1.0 / (float64)(ind.r1.Value+ind.r2.Value)) + (1.0 / (float64)(ind.r3.Value))))
+		tolerance = math.Sqrt(float64(ind.r1.Tolerance)*float64(ind.r1.Tolerance) + float64(ind.r2.Tolerance)*float64(ind.r2.Tolerance) + float64(ind.r3.Tolerance)*float64(ind.r3.Tolerance))
 	}
 
 	note := math.Abs((float64)(target)-value) + 100.0 - tolerance
@@ -239,11 +261,12 @@ func mix(ind1 Individual, ind2 Individual, resistors []Resistor) Individual {
 			}
 		}
 
-		if duplicate == false {
+		if !duplicate {
 			usedFiltered = append(usedFiltered, r)
 		}
 	}
 
+	//Yes we may re-use the same value, why not?
 	n.r1 = usedFiltered[rand.Intn(len(usedFiltered))]
 	n.r2 = usedFiltered[rand.Intn(len(usedFiltered))]
 	n.r3 = usedFiltered[rand.Intn(len(usedFiltered))]
@@ -276,6 +299,48 @@ func mix(ind1 Individual, ind2 Individual, resistors []Resistor) Individual {
 	return n
 }
 
+func cleanup(population []Individual) (uint32, []Individual) {
+	var updated []Individual
+	var duplicates uint32
+	var previous Individual
+	duplicates = 0
+
+	for idx, p := range population {
+
+		//The 2 first values can always be reorder, in all modes
+		if p.r1.Value > p.r2.Value {
+			tmp := p.r1
+			p.r1 = p.r2
+			p.r2 = tmp
+		}
+
+		if (p.mode == eModeSerial3) || (p.mode == eModeParallel3) {
+			if p.r2.Value > p.r3.Value {
+				tmp := p.r2
+				p.r2 = p.r3
+				p.r3 = tmp
+			}
+			if p.r1.Value > p.r2.Value {
+				tmp := p.r1
+				p.r1 = p.r2
+				p.r2 = tmp
+			}
+		}
+		if idx > 0 {
+			if (previous.mode == p.mode) && (previous.r1.Value == p.r1.Value) && (previous.r2.Value == p.r2.Value) {
+				if (p.mode == eModeSerial) || (p.mode == eModeParallel) {
+					duplicates++
+				} else if previous.r3.Value == p.r3.Value {
+					duplicates++
+				}
+			}
+		}
+		previous = p
+		updated = append(updated, p)
+	}
+	return duplicates, updated
+}
+
 func mutate(ind Individual, resistors []Resistor) Individual {
 	var rpick *Resistor
 
@@ -299,6 +364,7 @@ func mutate(ind Individual, resistors []Resistor) Individual {
 		}
 	}
 
+	//Locate mutating resistor on the list
 	idx := 0
 	for idx = 0; idx < len(resistors); idx++ {
 		if resistors[idx].Value == (*rpick).Value {
@@ -313,6 +379,7 @@ func mutate(ind Individual, resistors []Resistor) Individual {
 		return ind
 	}
 
+	//Mutate to the next one
 	if idx == 0 { //That was the first one
 		*rpick = resistors[idx+1]
 	} else if idx == len(resistors)-1 { //That was the last one
@@ -326,4 +393,75 @@ func mutate(ind Individual, resistors []Resistor) Individual {
 	}
 
 	return ind
+}
+
+/*
+The bruteforce algorithm that kills all the fun.
+*/
+func dumbBruteforce(target int32, resistors []Resistor) {
+
+	var closestDistance2 float64
+	var best2Str string
+	var closestDistance3 float64
+	var best3Str string
+
+	closestDistance2 = math.MaxFloat64
+	closestDistance3 = math.MaxFloat64
+
+	//Combination of 2
+	for _, a := range resistors {
+		for _, b := range resistors {
+			//2 in series
+			total := int32(a.Value + b.Value)
+			if math.Abs(float64(total-target)) < closestDistance2 {
+				closestDistance2 = math.Abs(float64(total - target))
+				best2Str = fmt.Sprintf("[ %d ] -- [ %d ] = %d Ohm", a.Value, b.Value, total)
+			}
+
+			//2 in parallel
+			total = int32(1.0 / ((1.0 / float64(a.Value)) + (1.0 / float64(b.Value))))
+			if math.Abs(float64(total-target)) < closestDistance2 {
+				closestDistance2 = math.Abs(float64(total - target))
+				best2Str = fmt.Sprintf("[ %d ] // [ %d ] = %d Ohm", a.Value, b.Value, total)
+			}
+		}
+	}
+
+	//Combinations of 3
+	for _, a := range resistors {
+		for _, b := range resistors {
+			for _, c := range resistors {
+
+				//3 in series
+				total := int32(a.Value + b.Value + c.Value)
+				if math.Abs(float64(total-target)) < closestDistance3 {
+					closestDistance3 = math.Abs(float64(total - target))
+					best3Str = fmt.Sprintf("[ %d ] -- [ %d ] -- [ %d ] = %d Ohm", a.Value, b.Value, c.Value, total)
+				}
+
+				//3 in parallel
+				total = int32(1.0 / ((1.0 / float64(a.Value)) + (1.0 / float64(b.Value)) + (1.0 / float64(c.Value))))
+				if math.Abs(float64(total-target)) < closestDistance3 {
+					closestDistance3 = math.Abs(float64(total - target))
+					best3Str = fmt.Sprintf("[ %d ] // [ %d ] // [ %d ] = %d Ohm", a.Value, b.Value, c.Value, total)
+				}
+
+				//2 in parallel + 1 series
+				total = int32(1.0/((1.0/float64(a.Value))+(1.0/float64(b.Value)))) + int32(c.Value)
+				if math.Abs(float64(total-target)) < closestDistance3 {
+					closestDistance3 = math.Abs(float64(total - target))
+					best3Str = fmt.Sprintf("[ %d ] // [ %d ] -- [ %d ] = %d Ohm", a.Value, b.Value, c.Value, total)
+				}
+
+				//2 in series + 1 parallel
+				total = int32(1.0 / ((1.0 / float64(a.Value+b.Value)) + (1.0 / float64(c.Value))))
+				if math.Abs(float64(total-target)) < closestDistance3 {
+					closestDistance3 = math.Abs(float64(total - target))
+					best3Str = fmt.Sprintf("([ %d ] -- [ %d ]) // [ %d ] = %d Ohm", a.Value, b.Value, c.Value, total)
+				}
+			}
+		}
+	}
+	fmt.Println("Best result with 2 resistors:", best2Str)
+	fmt.Println("Best result with 3 resistors:", best3Str)
 }

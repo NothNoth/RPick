@@ -33,6 +33,14 @@ The best current result is displayed (interrupt with CTRL+C).
   '--' means: resistors in series
   '//' means: resistors in parallel
 
-## Upcoming work
 
-  - Combine 3 resistors
+## Bruteforce
+
+At some point it appeared to me that the genetic algorithm was funny, but overkill: we end up trying all combinations and find the best option.
+So I implemented a very simple and brutal bruteforce which... just works fine (see "dumbBruteforce" in the code).
+
+
+## Webassembly
+
+I wanted to migrate the bruteforce code into javascipt to allow a simple webpage to be used to do all that nasty stuff.
+It ended up with webassembly from go, to a Twitter Bootstrap page.

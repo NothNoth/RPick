@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="RADIX Studio">
+    <meta name="generator" content="">
+
+    <script src="wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("rpick.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+        });
+    </script>
+
+    <title>RADIX Studio - RPick</title>
+    <link href="./css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body>
+
+<div class="col-lg-8 mx-auto p-4 py-md-5">
+  <header class="d-flex align-items-center pb-3 mb-5 border-bottom">
+    <a href="/" class="d-flex align-items-center text-body-emphasis text-decoration-none">
+      <span class="fs-4">RADIX Studio</span>
+    </a>
+  </header>
+
+  <main>
+    <h1 class="text-body-emphasis">RPick</h1>
+    <p class="fs-5 col-md-8">Combine resistors into a specific value.</p>
+
+    <hr class="col-3 col-md-2 mb-5">
+
+    <div class="row g-5">
+      <div class="col-md-6">
+        <h2 class="text-body-emphasis">1 : Update your resistors stock</h2>
+        <p>
+          <select id="resistors" class="form-select" size=12 multiple aria-label="size 20 multiple select" >
+            <option value="10">10</option>
+            <option value="22">22</option>
+            <option value="47">47</option>
+            <option value="100">100</option>
+            <option value="150">150</option>
+            <option value="220">220</option>
+            <option value="270">270</option>
+            <option value="300">300</option>
+            <option value="330">330</option>
+            <option value="470">470</option>
+            <option value="510">510</option>
+            <option value="680">680</option>
+            <option value="1000">1K</option>
+            <option value="2000">2K</option>
+            <option value="2200">2.2K</option>
+            <option value="3300">3.3K</option>
+            <option value="4700">4.7K</option>
+            <option value="5100">5.1K</option>
+            <option value="6800">6.8K</option>
+            <option value="10000">10K</option>
+            <option value="20000">20K</option>
+            <option value="47000">47K</option>
+            <option value="51000">51K</option>
+            <option value="68000">68K</option>
+            <option value="100000">100K</option>
+            <option value="220000">220K</option>
+            <option value="330000">330K</option>
+            <option value="470000">470K</option>
+            <option value="680000">680K</option>
+            <option value="1000000">1M</option>
+          </select>
+        </p>
+      </div>
+
+      <div class="col-md-6">
+        <h2 class="text-body-emphasis">2: Bruteforce</h2>
+        Target value:   <input id="target" name="target" type="text" size="7" maxlength="7"> Ohms
+
+        <div class="mb-5">
+          <a href="" id="go" class="btn btn-primary btn-lg px-4">Let's go</a>
+        </div>
+
+      </div>
+
+      <div class="col-md-12">
+        <h2 class="text-body-emphasis">3: Results</h2>
+
+        <div class="mb-5" id="resultDIV">
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+  <footer class="pt-5 my-5 text-body-secondary border-top">
+    RADIX Studio &middot; &copy; 2023
+  </footer>
+</div>
+
+    <script src="./js/bootstrap.bundle.min.js"></script>
+    <script>
+      const btn = document.querySelector('#go');
+      var resultDIV = document.querySelector('#resultDIV')
+      const target = document.querySelector('#target')
+      const resistors = document.querySelector('#resistors')
+
+      btn.onclick = (e) => {
+            e.preventDefault();
+            const selectedValues = [].filter
+                .call(resistors.options, option => option.selected)
+                .map(option => option.value);
+
+            resultDIV.innerHTML = rpickbf(target.value, selectedValues)
+        };
+    </script>
+      
+  </body>
+</html>
