@@ -36,12 +36,13 @@ type Mode int
 			           --[    ]---[   ]--
 */
 const (
-	eModeSerial    Mode = iota
-	eModeParallel  Mode = iota
-	eModeSerial3   Mode = iota
-	eModeParallel3 Mode = iota
-	eModeCombo     Mode = iota
-	eModeMax       Mode = iota
+	eModeSerial           Mode = iota
+	eModeParallel         Mode = iota
+	eModeSerial3          Mode = iota
+	eModeParallel3        Mode = iota
+	eModeParallelAndSerie Mode = iota
+	eModeSeriesOnParallel Mode = iota
+	eModeMax              Mode = iota
 )
 
 type Individual struct {
@@ -164,8 +165,11 @@ func (ind Individual) String() string {
 		return fmt.Sprintf("%dOhm // %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.value, ind.tolerance, ind.note)
 	case eModeParallel3:
 		return fmt.Sprintf("%dOhm // %dOhm // %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
-	case eModeCombo:
+	case eModeParallelAndSerie:
 		return fmt.Sprintf("%dOhm // %dOhm -- %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
+	case eModeSeriesOnParallel:
+		return fmt.Sprintf("(%dOhm -- %dOhm) // %dOhm => %d Ohm %d%% [%f]", ind.r1.Value, ind.r2.Value, ind.r3.Value, ind.value, ind.tolerance, ind.note)
+
 	}
 	return ""
 }
@@ -197,8 +201,10 @@ func evaluate(ind *Individual, target uint32) (uint32, uint32, float64) {
 		tolerance = math.Sqrt(float64(ind.r1.Tolerance)*float64(ind.r1.Tolerance) + float64(ind.r2.Tolerance)*float64(ind.r2.Tolerance))
 	case eModeParallel3:
 		value = (1.0 / ((1.0 / (float64)(ind.r1.Value)) + (1.0 / (float64)(ind.r2.Value)) + (1.0 / (float64)(ind.r3.Value))))
-	case eModeCombo:
+	case eModeParallelAndSerie:
 		value = (1.0/((1.0/(float64)(ind.r1.Value))+(1.0/(float64)(ind.r2.Value))) + float64(ind.r3.Value))
+	case eModeSeriesOnParallel:
+		value = (1.0 / ((1.0 / (float64)(ind.r1.Value+ind.r2.Value)) + (1.0 / (float64)(ind.r3.Value))))
 	}
 
 	note := math.Abs((float64)(target)-value) + 100.0 - tolerance
@@ -214,12 +220,12 @@ func mix(ind1 Individual, ind2 Individual, resistors []Resistor) Individual {
 	//Build a list with all used values
 	used = append(used, ind1.r1)
 	used = append(used, ind1.r2)
-	if (ind1.mode == eModeSerial3) || (ind1.mode == eModeSerial3) || (ind1.mode == eModeSerial3) {
+	if (ind1.mode == eModeSerial3) || (ind1.mode == eModeParallel3) || (ind1.mode == eModeParallelAndSerie) || (ind1.mode == eModeSeriesOnParallel) {
 		used = append(used, ind1.r3)
 	}
 	used = append(used, ind2.r1)
 	used = append(used, ind2.r2)
-	if (ind2.mode == eModeSerial3) || (ind2.mode == eModeSerial3) || (ind2.mode == eModeSerial3) {
+	if (ind2.mode == eModeSerial3) || (ind2.mode == eModeParallel3) || (ind2.mode == eModeParallelAndSerie) || (ind2.mode == eModeSeriesOnParallel) {
 		used = append(used, ind2.r3)
 	}
 
@@ -265,7 +271,7 @@ func mix(ind1 Individual, ind2 Individual, resistors []Resistor) Individual {
 	}
 
 	//All other cases => combo
-	n.mode = eModeCombo
+	n.mode = Mode(rand.Intn(int(eModeMax)))
 
 	return n
 }
